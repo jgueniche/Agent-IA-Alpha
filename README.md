@@ -32,6 +32,23 @@ accès), transfère vers une secrétaire si besoin (SIP REFER) et alimente une
 (écosystème LiveKit/Pipecat + faster-whisper), communiquant avec `core-api` en
 HTTP/REST. Persistance **PostgreSQL** (Prisma), files **Redis**.
 
+## Prévisualisation QA (rapide, avec données de démo)
+
+Pour découvrir l'app sans téléphonie ni configuration, avec des appels /
+transcriptions / rappels / relances déjà remplis :
+
+```bash
+bash scripts/demo.sh        # génère un .env de démo + lance toute la stack (Docker)
+# Back-office : http://localhost:3000   (login affiché par le script)
+# À tester : /calls /callbacks /knowledge /followups /supervision
+# Arrêt : docker compose down  (purge : docker compose down -v)
+```
+
+> Équivalent manuel : `cp .env.example .env`, mettre `SEED_DEMO=true` + les secrets,
+> puis `docker compose up --build`. Le seed de démo crée 4 appels (résolu / transféré
+> urgent / manqué / prépa), 3 tâches de rappel, 2 relances, 3 créneaux et la base de
+> connaissance. Données 100% fictives.
+
 ## Démarrage rapide (Phase 0)
 
 ```bash

@@ -1,0 +1,4 @@
+packages:
+  - "apps/core-api"
+  - "apps/back-office"
+  - "packages/*"

@@ -1,0 +1,16 @@
+{
+  "name": "@alpha/telephony",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Helpers SIP/3CX : trunk, SIP REFER (transfert), click-to-call (Phase 2)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo \"(telephony) lint via racine\"",
+    "test": "echo \"(telephony) tests en Phase 2\""
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

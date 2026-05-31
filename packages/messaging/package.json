@@ -1,0 +1,19 @@
+{
+  "name": "@alpha/messaging",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Canaux de relance : WhatsApp (BSP EEE), SMS (FR), voix sortante (Phase 6)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo \"(messaging) lint via racine\"",
+    "test": "echo \"(messaging) tests en Phase 6\""
+  },
+  "dependencies": {
+    "@alpha/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

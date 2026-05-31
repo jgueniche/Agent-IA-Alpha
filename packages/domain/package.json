@@ -1,0 +1,22 @@
+{
+  "name": "@alpha/domain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Types metier, enums et contrats partages (intents, modele de donnees)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo \"(domain) lint: voir eslint racine\"",
+    "test": "echo \"(domain) pas de test runtime — types uniquement\""
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

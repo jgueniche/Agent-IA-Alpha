@@ -1,0 +1,342 @@
+// =============================================================================
+// Schema de donnees Alpha Imagerie (PostgreSQL, heberge HDS / EEE).
+//
+// Principes :
+//  - Les champs marques "...Enc" contiennent du chiffre applicatif (AES-256-GCM,
+//    cf. CryptoService). Ils ne sont JAMAIS journalises en clair.
+//  - Les donnees d'identite (Patient) sont logiquement separees des donnees
+//    operationnelles (Call, Transcript...).
+//  - audit_log est append-only (aucune mutation/suppression cote applicatif).
+//  - Les valeurs d'enum correspondent aux chaines de @alpha/domain (stabilite).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------- Enums --------------------------------------
+
+enum Modality {
+  irm
+  scanner
+  radiographie
+  echographie
+  mammographie
+  cone_beam
+}
+
+enum CallDirection {
+  inbound
+  outbound
+}
+
+enum CallOutcome {
+  resolved_by_agent
+  transferred_to_human
+  missed
+  callback_queued
+  in_progress
+}
+
+enum Urgency {
+  none
+  low
+  medium
+  high
+  critical
+}
+
+enum CallbackStatus {
+  pending
+  assigned
+  in_progress
+  done
+  cancelled
+}
+
+enum FollowupChannel {
+  whatsapp
+  sms
+  voice
+}
+
+enum FollowupStatus {
+  scheduled
+  sent
+  failed
+  cancelled
+  opted_out
+}
+
+enum KnowledgeType {
+  prep
+  contre_indication
+  doc
+  acces
+  horaires
+}
+
+enum ConsentType {
+  recording
+  followup_transactional
+  followup_marketing
+  data_processing
+}
+
+enum AppointmentStatus {
+  free
+  booked
+  cancelled
+}
+
+enum RoleName {
+  secretary
+  manager
+  admin
+}
+
+// ------------------------------- Sites ---------------------------------------
+
+model Site {
+  id         String   @id @default(uuid())
+  slug       String   @unique // cergy | goussainville
+  name       String
+  address    String
+  phone      String?
+  // Modalites proposees, horaires : structures, editables en back-office
+  modalities Json     @default("[]")
+  hours      Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  calls        Call[]
+  appointments AppointmentCache[]
+
+  @@map("sites")
+}
+
+// ------------------------------ Patients -------------------------------------
+// Donnees d'identite — chiffrees au niveau applicatif, acces toujours journalise.
+
+model Patient {
+  id        String   @id @default(uuid())
+  firstName String? // chiffre (AES-256-GCM)
+  lastName  String? // chiffre
+  phoneEnc  String? // chiffre
+  // HMAC du numero normalise : permet la recherche sans dechiffrer
+  phoneHash String?  @unique
+  birthDate String? // chiffre (ISO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consents      Consent[]
+  callbackTasks CallbackTask[]
+  followups     Followup[]
+
+  @@map("patients")
+}
+
+// -------------------------------- Calls --------------------------------------
+
+model Call {
+  id           String        @id @default(uuid())
+  siteId       String?
+  callerNumber String? // chiffre (peut etre masque par l'appelant)
+  direction    CallDirection @default(inbound)
+  startedAt    DateTime      @default(now())
+  endedAt      DateTime?
+  duration     Int? // secondes
+  outcome      CallOutcome   @default(in_progress)
+  agentResolved Boolean      @default(false)
+  transferredTo String? // extension / file 3CX
+  recordingRef String? // reference du fichier chiffre (jamais l'audio en DB)
+  createdAt    DateTime      @default(now())
+
+  site          Site?          @relation(fields: [siteId], references: [id])
+  transcript    Transcript?
+  callbackTasks CallbackTask[]
+
+  @@index([startedAt])
+  @@index([siteId])
+  @@map("calls")
+}
+
+model Transcript {
+  id          String   @id @default(uuid())
+  callId      String   @unique
+  segments    Json     @default("[]") // [{ speaker, ts, text }]
+  summary     String?
+  intent      String?
+  urgencyFlag Urgency  @default(none)
+  createdAt   DateTime @default(now())
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@map("transcripts")
+}
+
+// ---------------------------- Callback tasks ---------------------------------
+
+model CallbackTask {
+  id           String         @id @default(uuid())
+  callId       String?
+  patientId    String?
+  motif        String
+  urgency      Urgency        @default(none)
+  status       CallbackStatus @default(pending)
+  assignedToId String?
+  notes        String?
+  dueAt        DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  call       Call?    @relation(fields: [callId], references: [id])
+  patient    Patient? @relation(fields: [patientId], references: [id])
+  assignedTo User?    @relation("CallbackAssignee", fields: [assignedToId], references: [id])
+
+  @@index([status])
+  @@map("callback_tasks")
+}
+
+// ------------------------- Agenda (cache lecture) ----------------------------
+
+model AppointmentCache {
+  id         String            @id @default(uuid())
+  siteId     String?
+  modality   Modality
+  externalId String? // id source (iCal UID / partenaire)
+  startAt    DateTime
+  endAt      DateTime
+  status     AppointmentStatus @default(free)
+  raw        Json? // payload source brut normalise
+  syncedAt   DateTime          @default(now())
+
+  site Site? @relation(fields: [siteId], references: [id])
+
+  @@unique([externalId])
+  @@index([siteId, modality, startAt])
+  @@map("appointments_cache")
+}
+
+// ------------------------------ Followups ------------------------------------
+
+model Followup {
+  id          String          @id @default(uuid())
+  patientId   String?
+  channel     FollowupChannel
+  template    String
+  scheduledAt DateTime
+  status      FollowupStatus  @default(scheduled)
+  optOut      Boolean         @default(false)
+  sentAt      DateTime?
+  createdAt   DateTime        @default(now())
+
+  patient Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([status, scheduledAt])
+  @@map("followups")
+}
+
+// -------------------------- Base de connaissance -----------------------------
+
+model KnowledgeItem {
+  id            String        @id @default(uuid())
+  modality      Modality?
+  type          KnowledgeType
+  title         String
+  content       String
+  version       Int           @default(1)
+  isActive      Boolean       @default(true)
+  validatedById String?
+  validatedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  validatedBy User? @relation("KnowledgeValidator", fields: [validatedById], references: [id])
+
+  @@index([modality, type, isActive])
+  @@map("knowledge_items")
+}
+
+// -------------------------- Utilisateurs / RBAC ------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  isActive     Boolean  @default(true)
+  mfaEnabled   Boolean  @default(false)
+  mfaSecret    String? // chiffre (AES-256-GCM)
+  roleId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  role             Role            @relation(fields: [roleId], references: [id])
+  assignedCallbacks CallbackTask[] @relation("CallbackAssignee")
+  validatedKnowledge KnowledgeItem[] @relation("KnowledgeValidator")
+  auditEntries     AuditLog[]      @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        RoleName     @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  code        String  @unique // ex. "calls:read"
+  description String?
+  roles       Role[]
+
+  @@map("permissions")
+}
+
+// ------------------------------ Audit log ------------------------------------
+// Append-only : aucune route applicative ne met a jour ou supprime ces lignes.
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  action       String // ex. "read", "create", "update", "login"
+  resourceType String // ex. "patient", "call", "transcript"
+  resourceId   String?
+  ip           String?
+  metadata     Json? // contexte NON sensible uniquement
+  createdAt    DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_log")
+}
+
+// ------------------------------ Consents -------------------------------------
+
+model Consent {
+  id        String      @id @default(uuid())
+  patientId String
+  type      ConsentType
+  granted   Boolean     @default(true)
+  grantedAt DateTime    @default(now())
+  revokedAt DateTime?
+  source    String? // ex. "ivr", "back-office", "web"
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId, type])
+  @@map("consents")
+}

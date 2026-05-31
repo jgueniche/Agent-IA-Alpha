@@ -1,0 +1,44 @@
+# Dependances
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Prisma (client genere)
+apps/core-api/src/generated/
+apps/core-api/prisma/generated/
+
+# Environnement & secrets (JAMAIS commiter)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Logs & runtime
+*.log
+logs/
+coverage/
+.turbo/
+
+# Editeurs / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Donnees locales (enregistrements appels, dumps) — sensibles
+data/
+recordings/
+*.dump
+*.sql.gz

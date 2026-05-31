@@ -1,0 +1,4 @@
+# Phase 0 : socle minimal (serveur de sante).
+# Les dependances temps reel (livekit-agents / pipecat, faster-whisper, etc.)
+# seront ajoutees en Phase 1.
+aiohttp==3.11.11

@@ -1,0 +1,29 @@
+{
+  "name": "alpha-imagerie",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Agent IA vocal pour le centre d'imagerie medicale Alpha Imagerie (Cergy / Goussainville)",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "bcrypt",
+      "@nestjs/core",
+      "sharp"
+    ]
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "core-api": "pnpm --filter @alpha/core-api",
+    "back-office": "pnpm --filter @alpha/back-office",
+    "domain": "pnpm --filter @alpha/domain"
+  }
+}

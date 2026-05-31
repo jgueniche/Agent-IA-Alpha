@@ -95,6 +95,55 @@ export class PatientsService {
     return !!last && last.granted && last.revokedAt === null;
   }
 
+  /** Droit d'accès (RGPD) : export des données d'un patient (déchiffrées). Audité. */
+  async exportData(id: string, actorId: string) {
+    const patient = await this.prisma.patient.findUnique({
+      where: { id },
+      include: { consents: true, followups: true, callbackTasks: true },
+    });
+    if (!patient) throw new NotFoundException('Patient introuvable');
+    await this.audit.record({
+      actorId,
+      action: 'export',
+      resourceType: 'patient',
+      resourceId: id,
+    });
+    return {
+      id: patient.id,
+      firstName: this.crypto.decrypt(patient.firstName),
+      lastName: this.crypto.decrypt(patient.lastName),
+      phone: this.crypto.decrypt(patient.phoneEnc),
+      createdAt: patient.createdAt,
+      consents: patient.consents,
+      followups: patient.followups.map((f) => ({
+        id: f.id,
+        channel: f.channel,
+        status: f.status,
+      })),
+      callbackTasks: patient.callbackTasks.map((t) => ({
+        id: t.id,
+        motif: t.motif,
+        status: t.status,
+      })),
+    };
+  }
+
+  /**
+   * Droit à l'effacement (RGPD) : supprime le patient. Consentements supprimés
+   * en cascade ; relances et tâches de rappel détachées (SetNull).
+   */
+  async erase(id: string, actorId: string): Promise<{ erased: boolean }> {
+    await this.ensurePatient(id);
+    await this.prisma.patient.delete({ where: { id } });
+    await this.audit.record({
+      actorId,
+      action: 'erase',
+      resourceType: 'patient',
+      resourceId: id,
+    });
+    return { erased: true };
+  }
+
   private async ensurePatient(id: string): Promise<void> {
     const p = await this.prisma.patient.findUnique({
       where: { id },

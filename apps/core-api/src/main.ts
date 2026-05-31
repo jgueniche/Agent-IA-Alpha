@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 /**
  * Point d'entree de core-api.
@@ -22,6 +23,8 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
   app.setGlobalPrefix('api');
+  // Filtre global : aucune fuite de détail interne / donnée patient dans les erreurs.
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

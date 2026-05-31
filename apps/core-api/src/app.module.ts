@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { loadConfig } from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { CryptoModule } from './crypto/crypto.module';
@@ -14,6 +15,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { CallbacksModule } from './callbacks/callbacks.module';
 import { PatientsModule } from './patients/patients.module';
 import { FollowupsModule } from './followups/followups.module';
+import { ComplianceModule } from './compliance/compliance.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { ServiceAuthGuard } from './service-auth/service-auth.guard';
@@ -28,6 +30,8 @@ import { ServiceAuthGuard } from './service-auth/service-auth.guard';
       isGlobal: true,
       load: [loadConfig],
     }),
+    // Durcissement : limitation de débit (anti-abus / brute force).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
     CryptoModule,
     AuditModule,
@@ -40,10 +44,12 @@ import { ServiceAuthGuard } from './service-auth/service-auth.guard';
     CallbacksModule,
     PatientsModule,
     FollowupsModule,
+    ComplianceModule,
   ],
   providers: [
-    // Ordre : auth utilisateur (JWT, ignore les routes @Public) puis cle de
-    // service (@ServiceOnly) puis autorisation RBAC.
+    // Ordre : limitation de débit, puis auth utilisateur (JWT, ignore @Public),
+    // puis clé de service (@ServiceOnly), puis autorisation RBAC.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ServiceAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },

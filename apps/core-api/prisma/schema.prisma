@@ -195,8 +195,8 @@ model CallbackTask {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  call       Call?    @relation(fields: [callId], references: [id])
-  patient    Patient? @relation(fields: [patientId], references: [id])
+  call       Call?    @relation(fields: [callId], references: [id], onDelete: SetNull)
+  patient    Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
   assignedTo User?    @relation("CallbackAssignee", fields: [assignedToId], references: [id])
 
   @@index([status])
@@ -240,7 +240,7 @@ model Followup {
   failureReason String?
   createdAt   DateTime        @default(now())
 
-  patient Patient? @relation(fields: [patientId], references: [id])
+  patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
 
   @@index([status, scheduledAt])
   @@map("followups")
@@ -343,7 +343,7 @@ model Consent {
   revokedAt DateTime?
   source    String? // ex. "ivr", "back-office", "web"
 
-  patient Patient @relation(fields: [patientId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId, type])
   @@map("consents")

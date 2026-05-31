@@ -21,7 +21,8 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 
 ## Journal d'audit
 
-- [x] `audit_log` **append-only** (aucune route ne met à jour/supprime ces lignes).
+- [x] `audit_log` **append-only** garanti par **trigger PostgreSQL** (UPDATE/DELETE
+  rejetés ; DELETE uniquement via purge de rétention contrôlée — Phase 7).
 - [x] Tous les accès/échecs d'auth tracés (`AuthService` audite login / login_failed).
 - [x] **Consultation de donnée patient** tracée : lecture d'appels/transcriptions,
   numéro déchiffré (`caller_number`), file de rappel et click-to-call audités (Phase 5).
@@ -31,8 +32,9 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 
 - [x] Données d'identité **séparées** des données opérationnelles (modèle `Patient` isolé).
 - [x] Identité chiffrée ; recherche par téléphone via **HMAC** (`phoneHash`) sans déchiffrer.
-- [ ] Registre des traitements, base légale documentée (DPO).
-- [ ] Droits d'accès / rectification / **effacement** (Phase 7).
+- [ ] Registre des traitements, base légale documentée (DPO — organisationnel).
+- [x] **Droit d'accès** (`GET /patients/:id/export`) et **droit à l'effacement**
+  (`DELETE /patients/:id`, cascade consentements) — audités (Phase 7).
 
 ## Consentement
 
@@ -45,7 +47,9 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 ## Rétention & purge
 
 - [x] Durées configurables (`DATA_RETENTION_DAYS`, `AUDIT_LOG_RETENTION_DAYS`).
-- [ ] **Purge automatique** programmée (job Redis/BullMQ — Phase 7).
+- [x] **Purge automatique** : `RetentionService` (appels/transcriptions, relances,
+  tâches, créneaux passés, audit expiré) ; job BullMQ répétable
+  (`RETENTION_QUEUE_ENABLED`) + déclenchement manuel admin (Phase 7).
 
 ## Logs & secrets
 
@@ -53,8 +57,12 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 - [x] Secrets via variables d'environnement / coffre, **jamais** en dur.
 - [x] `.env` exclu du dépôt (`.gitignore`) ; seul `.env.example` (sans secret) est versionné.
 - [x] Principe du **moindre privilège** : matrice RBAC par rôle (secrétaire/responsable/admin).
+- [x] **Filtre d'erreurs global** : aucune fuite de détail interne / donnée patient
+  dans les réponses d'erreur (message générique hors HttpException maîtrisée).
+- [x] **Limitation de débit** (throttler) globale + stricte sur le login (anti brute-force).
 
 ## Test automatisé « zéro donnée de santé »
 
 - [x] `AuditService.sanitize` couvert par test (caviardage des clés sensibles).
-- [ ] Test transverse scannant logs/erreurs/télémétrie (Phase 8).
+- [x] Filtre d'erreurs couvert par test (message générique, pas de fuite).
+- [ ] Test transverse scannant logs/erreurs/télémétrie en continu (Phase 8).

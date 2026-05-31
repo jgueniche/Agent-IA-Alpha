@@ -7,6 +7,7 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import type { AuthenticatedUser } from '@alpha/domain';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -21,6 +22,8 @@ export class AuthController {
 
   /** Connexion secretaire/admin (email + mot de passe + MFA si activee). */
   @Public()
+  // Limitation stricte anti brute-force : 5 tentatives / minute.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @HttpCode(200)
   login(@Body() dto: LoginDto, @Req() req: Request) {

@@ -17,6 +17,7 @@ import {
   SiteSlug,
 } from '@alpha/domain';
 import { KNOWLEDGE_SEED } from './knowledge-seed';
+import { seedDemo } from './demo-seed';
 
 const prisma = new PrismaClient();
 
@@ -154,6 +155,11 @@ async function main(): Promise<void> {
   console.log(
     `Seed termine : permissions, roles, sites, comptes et ${KNOWLEDGE_SEED.length} items de connaissance.`,
   );
+
+  // Donnees de demonstration (QA) si SEED_DEMO=true.
+  if (process.env.SEED_DEMO === 'true') {
+    await seedDemo(prisma);
+  }
 }
 
 main()

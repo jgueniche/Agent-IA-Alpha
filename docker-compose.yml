@@ -48,6 +48,8 @@ services:
       # Surcharge l'hote DB/Redis pour le reseau Docker interne.
       DATABASE_URL: postgresql://${POSTGRES_USER:-alpha}:${POSTGRES_PASSWORD:-alpha}@postgres:5432/${POSTGRES_DB:-alpha_imagerie}?schema=public
       REDIS_URL: redis://redis:6379
+      # Donnees de demonstration (QA) : SEED_DEMO=true dans .env
+      SEED_DEMO: ${SEED_DEMO:-false}
     depends_on:
       postgres:
         condition: service_healthy

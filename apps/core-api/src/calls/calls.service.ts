@@ -68,6 +68,7 @@ export class CallsService {
         duration: dto.durationSeconds,
         agentResolved: dto.agentResolved,
         transferredTo: dto.transferredTo,
+        agentLatencyMs: dto.agentLatencyMs,
       },
     });
     await this.audit.record({

@@ -31,4 +31,9 @@ export class UpdateCallDto {
   @IsOptional()
   @IsString()
   transferredTo?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  agentLatencyMs?: number;
 }

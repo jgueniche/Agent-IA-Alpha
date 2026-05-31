@@ -68,6 +68,18 @@ cd apps/voice-gateway && python -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt && python -m pytest   # garde-fous + boucle agent
 ```
 
+### Supervision & test de charge (Phase 8)
+
+- Métriques agent (responsable/admin) : `GET /api/supervision/metrics` — taux de
+  résolution / transfert, **latence perçue** (cible < 800 ms), motifs, urgences.
+  Dashboard : page back-office `/supervision`.
+- Test de charge (sans dépendance) :
+
+```bash
+node scripts/loadtest.mjs http://localhost:4000/api/health 50 10
+# /health est exempté du rate-limit ; les autres routes sont throttlées.
+```
+
 ### Simuler un appel de bout en bout (Phase 1)
 
 Avec `core-api` démarré (et `SERVICE_API_KEY` partagé) :
@@ -93,7 +105,7 @@ CORE_API_URL=http://localhost:4000 SERVICE_API_KEY=<clé> python -m src.simulate
 | 5 | File de rappel + back-office (journal d'appels, transcriptions, assignation, click-to-call) | ✅ livré |
 | 6 | Relances multicanal (WhatsApp/SMS/voix) : consentement, opt-out, fenêtre horaire, BullMQ, traçabilité | ✅ livré |
 | 7 | Conformité : audit immuable (trigger), purge par rétention, droits RGPD (export/effacement), filtre d'erreurs, rate-limiting | ✅ livré |
-| 8 | Supervision & qualité (métriques, charge, E2E) | à venir |
+| 8 | Supervision & qualité : métriques (résolution/transfert/latence), dashboard, parcours E2E, test de charge | ✅ livré |
 
 ## Contraintes structurantes
 

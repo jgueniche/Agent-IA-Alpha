@@ -74,6 +74,9 @@ export default function DashboardPage() {
         <a href="/knowledge" style={{ color: 'var(--accent)', display: 'block' }}>
           → Base de connaissance imagerie
         </a>
+        <a href="/supervision" style={{ color: 'var(--accent)', display: 'block' }}>
+          → Supervision (responsable/admin)
+        </a>
         <button onClick={logout} style={{ marginTop: '0.75rem' }}>
           Se deconnecter
         </button>

@@ -155,6 +155,8 @@ model Call {
   agentResolved Boolean      @default(false)
   transferredTo String? // extension / file 3CX
   recordingRef String? // reference du fichier chiffre (jamais l'audio en DB)
+  // Latence moyenne percue (ms) rapportee par la passerelle (supervision/qualite).
+  agentLatencyMs Int?
   createdAt    DateTime      @default(now())
 
   site          Site?          @relation(fields: [siteId], references: [id])

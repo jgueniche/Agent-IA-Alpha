@@ -16,6 +16,7 @@ import { CallbacksModule } from './callbacks/callbacks.module';
 import { PatientsModule } from './patients/patients.module';
 import { FollowupsModule } from './followups/followups.module';
 import { ComplianceModule } from './compliance/compliance.module';
+import { SupervisionModule } from './supervision/supervision.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { ServiceAuthGuard } from './service-auth/service-auth.guard';
@@ -45,6 +46,7 @@ import { ServiceAuthGuard } from './service-auth/service-auth.guard';
     PatientsModule,
     FollowupsModule,
     ComplianceModule,
+    SupervisionModule,
   ],
   providers: [
     // Ordre : limitation de débit, puis auth utilisateur (JWT, ignore @Public),

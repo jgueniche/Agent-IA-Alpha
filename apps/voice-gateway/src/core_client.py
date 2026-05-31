@@ -59,6 +59,7 @@ class CoreApiClient:
         agent_resolved: bool,
         transferred_to: str | None = None,
         ended_at: str | None = None,
+        agent_latency_ms: int | None = None,
     ) -> None:
         payload: dict[str, Any] = {
             "outcome": outcome,
@@ -69,6 +70,8 @@ class CoreApiClient:
             payload["transferredTo"] = transferred_to
         if ended_at:
             payload["endedAt"] = ended_at
+        if agent_latency_ms is not None:
+            payload["agentLatencyMs"] = agent_latency_ms
         await self._patch(f"/api/calls/{call_id}", payload)
 
     # --- helpers HTTP --------------------------------------------------------

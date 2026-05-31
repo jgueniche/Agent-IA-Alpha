@@ -38,6 +38,7 @@ class VoiceAgent:
     _last_modality: str | None = None
     _proposed_slots: list[dict] = field(default_factory=list)
     _booking_done: bool = False
+    _latencies_ms: list[float] = field(default_factory=list)
 
     async def start(self) -> str:
         """Demarre l'appel cote core-api. Retourne l'identifiant d'appel."""
@@ -52,6 +53,8 @@ class VoiceAgent:
     async def handle_user_audio(self, audio: bytes, ts: float | None = None) -> bytes:
         """Traite un tour de parole patient et renvoie l'audio de la reponse."""
         offset = ts if ts is not None else (time.monotonic() - self._start_ts)
+        # Latence percue : du debut du traitement a la reponse synthetisee.
+        turn_start = time.monotonic()
         text = await self.stt.transcribe(audio, language="fr")
         self._segments.append({"speaker": "patient", "ts": round(offset, 2), "text": text})
 
@@ -62,7 +65,15 @@ class VoiceAgent:
         )
         self._history.append(LlmMessage(role="user", content=text))
         self._history.append(LlmMessage(role="assistant", content=reply))
-        return await self.tts.synthesize(reply, voice="fr_FR-female")
+        audio_out = await self.tts.synthesize(reply, voice="fr_FR-female")
+        self._latencies_ms.append((time.monotonic() - turn_start) * 1000.0)
+        return audio_out
+
+    def avg_latency_ms(self) -> int | None:
+        """Latence moyenne percue sur l'appel (ms), ou None si aucun tour."""
+        if not self._latencies_ms:
+            return None
+        return round(sum(self._latencies_ms) / len(self._latencies_ms))
 
     async def _decide_reply(self, text: str) -> str:
         """Applique les garde-fous avant de solliciter le LLM."""
@@ -212,6 +223,7 @@ class VoiceAgent:
             duration_seconds=duration,
             agent_resolved=agent_resolved,
             transferred_to=self.transfer_target if self._transfer_requested else None,
+            agent_latency_ms=self.avg_latency_ms(),
         )
 
     # --- qualification simple (sera affinee en Phase 3 avec le LLM/RAG) ------

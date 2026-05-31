@@ -27,7 +27,7 @@ class FakeCore:
             "urgency": urgency,
         }
 
-    async def end_call(self, call_id, *, outcome, duration_seconds, agent_resolved, transferred_to=None, ended_at=None):
+    async def end_call(self, call_id, *, outcome, duration_seconds, agent_resolved, transferred_to=None, ended_at=None, agent_latency_ms=None):
         self.ended = {
             "call_id": call_id,
             "outcome": outcome,

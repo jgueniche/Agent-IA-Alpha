@@ -1,0 +1,13 @@
+# Dépendances Phase 2 (temps réel SIP/RTP via LiveKit). Lourdes : NON incluses
+# dans l'image par défaut. Installer pour activer le worker livekit_agent.
+#
+#   pip install -r requirements-livekit.txt
+#
+# Choisir des plugins STT/LLM/TTS EEE / auto-hébergés (§2.3) — ex. un endpoint
+# Whisper auto-hébergé, Mistral EU, Piper/XTTS. Adapter les versions à jour.
+-r requirements.txt
+livekit-agents>=1.0.0
+livekit-plugins-silero>=1.0.0
+# Exemples de plugins (à adapter au déploiement souverain) :
+# livekit-plugins-openai>=1.0.0     # client compatible OpenAI -> endpoint EEE auto-hébergé
+# livekit-plugins-deepgram>=1.0.0

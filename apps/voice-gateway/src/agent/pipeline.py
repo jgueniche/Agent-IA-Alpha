@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
+from ..calendar_client import CalendarClient
 from ..core_client import CoreApiClient
 from ..knowledge import KnowledgeRetriever
 from ..providers.base import LlmMessage, LlmProvider, SttProvider, TtsProvider
@@ -23,6 +24,7 @@ class VoiceAgent:
     tts: TtsProvider
     core: CoreApiClient
     retriever: KnowledgeRetriever | None = None
+    calendar: CalendarClient | None = None
     site: str | None = None
     caller_number: str | None = None
     transfer_target: str | None = None
@@ -34,6 +36,8 @@ class VoiceAgent:
     _transfer_requested: bool = False
     _start_ts: float = 0.0
     _last_modality: str | None = None
+    _proposed_slots: list[dict] = field(default_factory=list)
+    _booking_done: bool = False
 
     async def start(self) -> str:
         """Demarre l'appel cote core-api. Retourne l'identifiant d'appel."""
@@ -85,6 +89,11 @@ class VoiceAgent:
         if grounded is not None:
             return grounded
 
+        # Agenda : proposer des disponibilités (lecture) ou déporter la prise de RDV.
+        booking = await self._handle_booking(text)
+        if booking is not None:
+            return booking
+
         return await self.llm.complete(
             system=guardrails.SYSTEM_PROMPT_FR, messages=self._history + [LlmMessage("user", text)]
         )
@@ -106,6 +115,69 @@ class VoiceAgent:
         if not results:
             return None
         return results[0]["content"]
+
+    async def _handle_booking(self, text: str) -> str | None:
+        """Outils get_availabilities / create_callback_task (prise de RDV)."""
+        if self.calendar is None:
+            return None
+
+        # 1) Confirmation d'un créneau précédemment proposé -> déport en rappel.
+        if self._proposed_slots and intents.is_confirmation(text):
+            slot = self._proposed_slots[0]
+            await self.calendar.request_booking(
+                slot["site"],
+                slot["modality"],
+                desired_start_at=slot["startAt"],
+                call_id=self.call_id,
+            )
+            self._proposed_slots = []
+            self._booking_done = True
+            return (
+                "C'est note. Une secretaire confirmera votre rendez-vous. "
+                "Puis-je faire autre chose pour vous ?"
+            )
+
+        # 2) Demande de RDV : lire les disponibilités synchronisées et proposer.
+        if not intents.is_booking_query(text):
+            return None
+        modality = intents.detect_modality(text) or self._last_modality
+        site = intents.detect_site(text) or self.site
+        if not modality or not site:
+            # Précisions manquantes : on laisse l'agent (LLM) demander site/modalité.
+            return None
+
+        slots = await self.calendar.get_availabilities(site, modality, limit=3)
+        if slots:
+            self._proposed_slots = slots
+            return self._format_slots(slots, modality)
+
+        # Aucun créneau en ligne -> déport direct vers une tâche de rappel.
+        await self.calendar.request_booking(site, modality, call_id=self.call_id)
+        self._booking_done = True
+        return (
+            "Je n'ai pas de creneau disponible en ligne pour le moment. Je transmets "
+            "votre demande : une secretaire vous rappellera pour fixer le rendez-vous."
+        )
+
+    @staticmethod
+    def _format_slots(slots: list[dict], modality: str) -> str:
+        """Met en forme quelques créneaux proposés (lecture seule)."""
+        labels = []
+        for s in slots[:3]:
+            iso = s.get("startAt", "")
+            # ISO -> "le JJ/MM a HH:MM" (affichage simple)
+            try:
+                date, rest = iso.split("T")
+                y, m, d = date.split("-")
+                hh, mm = rest[:5].split(":")
+                labels.append(f"le {d}/{m} a {hh}:{mm}")
+            except ValueError:
+                labels.append(iso)
+        joined = ", ".join(labels)
+        return (
+            f"Voici des creneaux disponibles pour votre {modality} : {joined}. "
+            "Lequel vous conviendrait ?"
+        )
 
     def request_transfer(self) -> None:
         """Marque l'appel pour transfert humain (incertitude / demande patient)."""

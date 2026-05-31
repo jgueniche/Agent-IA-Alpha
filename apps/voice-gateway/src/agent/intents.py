@@ -89,3 +89,21 @@ def detect_knowledge_type(text: str) -> str | None:
 def is_knowledge_query(text: str) -> bool:
     """Vrai si la demande relève d'une info de connaissance (et non d'un RDV pur)."""
     return detect_knowledge_type(text) is not None
+
+
+def is_booking_query(text: str) -> bool:
+    """Vrai si la personne souhaite (prendre) un rendez-vous."""
+    norm = normalize(text)
+    return _has_any(
+        norm,
+        ("rendez-vous", "rendez vous", "rendezvous", "rdv", "creneau", "disponibil", "reserver"),
+    )
+
+
+def is_confirmation(text: str) -> bool:
+    """Vrai si la personne valide une proposition (créneau)."""
+    norm = normalize(text)
+    return _has_any(
+        norm,
+        ("oui", "parfait", "premier", "prends", "accord", "convient", "tres bien"),
+    )

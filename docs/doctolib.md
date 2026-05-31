@@ -16,10 +16,22 @@ Toute la logique métier dépend d'une interface unique
 (`packages/providers/src/calendar/calendar-provider.ts`). On peut changer de
 source d'agenda **sans réécrire le métier**.
 
-| Adaptateur | Rôle | Disponibilité |
+| Adaptateur | Rôle | État |
 |---|---|---|
-| `ICalSyncAdapter` | **Lecture seule** via flux iCal synchronisé depuis Doctolib (export calendrier). Fonctionne dès le jour 1, sans accréditation. | Phase 4 |
-| `DoctolibPartnerAdapter` | API **officielle partenaire** (lecture + écriture), activée si/quand l'accréditation est obtenue. Stub conforme à l'interface en attendant. | Quand accréditation obtenue |
+| `ICalSyncAdapter` | **Lecture seule** via flux iCal synchronisé depuis Doctolib (export calendrier). Parseur iCal + normalisation (modalité déduite du SUMMARY/CATEGORIES). Fonctionne dès le jour 1, sans accréditation. | ✅ implémenté (Phase 4) |
+| `DoctolibPartnerAdapter` | API **officielle partenaire** (lecture + écriture), activée si/quand l'accréditation est obtenue. Stub conforme à l'interface en attendant. | stub |
+
+## Flux Phase 4 (implémenté)
+
+1. **Sync** : `core-api` (`CalendarService.sync`) appelle `adapter.pull(site)` →
+   normalise les VEVENT → upsert dans `appointments_cache` (clé `externalId` =
+   UID iCal). Déclenchable via `POST /api/calendar/sync` (manager/admin).
+   *Synchro périodique automatique (BullMQ) prévue en Phase 7/8.*
+2. **Lecture** : l'agent appelle `POST /api/calendar/availabilities` (clé de
+   service) → créneaux libres **lus depuis le cache** (= depuis la sync).
+3. **Écriture déportée** : à la confirmation, l'agent appelle
+   `POST /api/calendar/booking-request` → création d'une `callback_task`
+   (secrétaire), puisque l'écriture directe n'est pas possible sans API partenaire.
 
 Sélection par variable d'environnement :
 

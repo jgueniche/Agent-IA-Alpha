@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
 import { CallsModule } from './calls/calls.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { ServiceAuthGuard } from './service-auth/service-auth.guard';
@@ -32,6 +33,7 @@ import { ServiceAuthGuard } from './service-auth/service-auth.guard';
     HealthModule,
     CallsModule,
     KnowledgeModule,
+    CalendarModule,
   ],
   providers: [
     // Ordre : auth utilisateur (JWT, ignore les routes @Public) puis cle de

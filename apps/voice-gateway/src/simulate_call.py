@@ -17,14 +17,15 @@ import sys
 
 from .config import load_config
 from .core_client import CoreApiClient
+from .calendar_client import CalendarClient
 from .knowledge import HttpKnowledgeRetriever
 from .providers.factory import build_llm, build_stt, build_tts
 from .agent.pipeline import VoiceAgent
 
-# Conversation patient scriptee (cas nominal : prise de RDV IRM).
+# Conversation patient scriptee (cas nominal : prise de RDV IRM + question prépa).
 SCRIPT_NOMINAL = [
     "Bonjour, je voudrais prendre un rendez-vous pour une IRM.",
-    "A Cergy si possible.",
+    "Oui, le premier me convient.",
     "Faut-il etre a jeun pour cet examen ?",
     "Tres bien, merci.",
 ]
@@ -38,6 +39,7 @@ async def run(script: list[str], *, site: str | None = "cergy") -> str:
         tts=build_tts(cfg),
         core=CoreApiClient(cfg.core_api_url, cfg.service_api_key),
         retriever=HttpKnowledgeRetriever(cfg.core_api_url, cfg.service_api_key),
+        calendar=CalendarClient(cfg.core_api_url, cfg.service_api_key),
         site=site,
         caller_number="0612345678",
     )

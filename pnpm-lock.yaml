@@ -38,6 +38,9 @@ importers:
       '@alpha/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@alpha/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.24(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)

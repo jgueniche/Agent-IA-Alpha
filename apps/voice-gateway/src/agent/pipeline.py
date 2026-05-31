@@ -11,8 +11,9 @@ import time
 from dataclasses import dataclass, field
 
 from ..core_client import CoreApiClient
+from ..knowledge import KnowledgeRetriever
 from ..providers.base import LlmMessage, LlmProvider, SttProvider, TtsProvider
-from . import guardrails
+from . import guardrails, intents
 
 
 @dataclass
@@ -21,6 +22,7 @@ class VoiceAgent:
     llm: LlmProvider
     tts: TtsProvider
     core: CoreApiClient
+    retriever: KnowledgeRetriever | None = None
     site: str | None = None
     caller_number: str | None = None
     transfer_target: str | None = None
@@ -31,6 +33,7 @@ class VoiceAgent:
     _urgency: str = guardrails.URGENCY_NONE
     _transfer_requested: bool = False
     _start_ts: float = 0.0
+    _last_modality: str | None = None
 
     async def start(self) -> str:
         """Demarre l'appel cote core-api. Retourne l'identifiant d'appel."""
@@ -59,6 +62,11 @@ class VoiceAgent:
 
     async def _decide_reply(self, text: str) -> str:
         """Applique les garde-fous avant de solliciter le LLM."""
+        # Mémorise la dernière modalité évoquée (contexte conversationnel).
+        modality = intents.detect_modality(text)
+        if modality:
+            self._last_modality = modality
+
         urgency = guardrails.detect_urgency(text)
         self._urgency = guardrails.max_urgency(self._urgency, urgency)
 
@@ -70,9 +78,34 @@ class VoiceAgent:
             self._transfer_requested = True
             return guardrails.RESULTS_REPLY
 
+        # RAG : si la demande relève d'une info de connaissance (préparation,
+        # contre-indication, documents, horaires, accès), on répond à partir de
+        # la base validée plutôt que de laisser le LLM improviser.
+        grounded = await self._lookup_knowledge(text)
+        if grounded is not None:
+            return grounded
+
         return await self.llm.complete(
             system=guardrails.SYSTEM_PROMPT_FR, messages=self._history + [LlmMessage("user", text)]
         )
+
+    async def _lookup_knowledge(self, text: str) -> str | None:
+        """Outil lookup_exam_prep : interroge la base de connaissance (retrieval)."""
+        if self.retriever is None:
+            return None
+        ktype = intents.detect_knowledge_type(text)
+        # On ne déclenche le RAG que pour une vraie question d'information ;
+        # une demande de RDV (sans type de connaissance) reste gérée par le LLM.
+        if ktype is None:
+            return None
+        modality = intents.detect_modality(text) or self._last_modality
+        site = intents.detect_site(text) or self.site
+        results = await self.retriever.search(
+            text, modality=modality, type=ktype, site=site, limit=1
+        )
+        if not results:
+            return None
+        return results[0]["content"]
 
     def request_transfer(self) -> None:
         """Marque l'appel pour transfert humain (incertitude / demande patient)."""

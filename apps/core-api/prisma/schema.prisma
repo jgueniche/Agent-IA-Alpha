@@ -246,10 +246,14 @@ model Followup {
 
 model KnowledgeItem {
   id            String        @id @default(uuid())
+  // Cle metier stable (idempotence du seed + reference d'edition).
+  key           String        @unique
   modality      Modality?
   type          KnowledgeType
   title         String
   content       String
+  // Site optionnel : certaines infos (horaires, acces) sont propres a un site.
+  siteSlug      String?
   version       Int           @default(1)
   isActive      Boolean       @default(true)
   validatedById String?

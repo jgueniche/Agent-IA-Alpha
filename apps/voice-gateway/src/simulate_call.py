@@ -17,6 +17,7 @@ import sys
 
 from .config import load_config
 from .core_client import CoreApiClient
+from .knowledge import HttpKnowledgeRetriever
 from .providers.factory import build_llm, build_stt, build_tts
 from .agent.pipeline import VoiceAgent
 
@@ -36,6 +37,7 @@ async def run(script: list[str], *, site: str | None = "cergy") -> str:
         llm=build_llm(cfg),
         tts=build_tts(cfg),
         core=CoreApiClient(cfg.core_api_url, cfg.service_api_key),
+        retriever=HttpKnowledgeRetriever(cfg.core_api_url, cfg.service_api_key),
         site=site,
         caller_number="0612345678",
     )

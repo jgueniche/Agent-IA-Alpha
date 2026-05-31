@@ -16,6 +16,7 @@ import {
   RoleName,
   SiteSlug,
 } from '@alpha/domain';
+import { KNOWLEDGE_SEED } from './knowledge-seed';
 
 const prisma = new PrismaClient();
 
@@ -127,7 +128,32 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Seed termine : permissions, roles, sites et comptes initiaux.');
+  // 5) Base de connaissance imagerie (contenu a faire valider par un radiologue)
+  for (const item of KNOWLEDGE_SEED) {
+    await prisma.knowledgeItem.upsert({
+      where: { key: item.key },
+      update: {
+        modality: item.modality ?? null,
+        type: item.type,
+        title: item.title,
+        content: item.content,
+        siteSlug: item.siteSlug ?? null,
+      },
+      create: {
+        key: item.key,
+        modality: item.modality ?? null,
+        type: item.type,
+        title: item.title,
+        content: item.content,
+        siteSlug: item.siteSlug ?? null,
+        // validatedById reste null : contenu en attente de validation radiologue.
+      },
+    });
+  }
+
+  console.log(
+    `Seed termine : permissions, roles, sites, comptes et ${KNOWLEDGE_SEED.length} items de connaissance.`,
+  );
 }
 
 main()

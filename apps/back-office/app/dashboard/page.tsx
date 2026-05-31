@@ -62,7 +62,12 @@ export default function DashboardPage() {
           {profile.permissions.length} permission(s) — le tableau de bord
           temps reel arrive en Phase 5.
         </p>
-        <button onClick={logout}>Se deconnecter</button>
+        <a href="/knowledge" style={{ color: 'var(--accent)' }}>
+          → Base de connaissance imagerie
+        </a>
+        <button onClick={logout} style={{ marginTop: '0.75rem' }}>
+          Se deconnecter
+        </button>
       </div>
     </main>
   );

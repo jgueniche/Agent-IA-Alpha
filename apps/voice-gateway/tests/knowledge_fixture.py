@@ -1,0 +1,95 @@
+"""Jeu de connaissances de test (miroir du seed core-api) pour les scénarios.
+
+Permet de valider le retrieval hors-ligne (InMemoryKnowledgeRetriever).
+"""
+
+KNOWLEDGE_FIXTURE = [
+    {
+        "key": "irm_contre_indications",
+        "modality": "irm",
+        "type": "contre_indication",
+        "title": "IRM — contre-indications",
+        "content": "Signalez pacemaker, implants metalliques, neurostimulateur, grossesse et claustrophobie. Retirez tout objet metallique.",
+        "siteSlug": None,
+    },
+    {
+        "key": "irm_preparation",
+        "modality": "irm",
+        "type": "prep",
+        "title": "IRM — preparation",
+        "content": "En general l'IRM ne necessite pas d'etre a jeun, sauf indication contraire. Prevoyez une tenue sans metal.",
+        "siteSlug": None,
+    },
+    {
+        "key": "scanner_injecte_preparation",
+        "modality": "scanner",
+        "type": "prep",
+        "title": "Scanner avec injection — preparation",
+        "content": "Pour un scanner avec injection iodee, presentez-vous a jeun depuis 3 a 4 heures. Un dosage de creatinine peut etre demande.",
+        "siteSlug": None,
+    },
+    {
+        "key": "mammographie_preparation",
+        "modality": "mammographie",
+        "type": "prep",
+        "title": "Mammographie — preparation",
+        "content": "Realisez la mammographie en premiere partie du cycle. N'appliquez ni deodorant ni creme le jour de l'examen.",
+        "siteSlug": None,
+    },
+    {
+        "key": "echographie_pelvienne_preparation",
+        "modality": "echographie",
+        "type": "prep",
+        "title": "Echographie pelvienne — preparation",
+        "content": "Pour une echographie pelvienne, presentez-vous la vessie pleine : buvez un litre d'eau une heure avant.",
+        "siteSlug": None,
+    },
+    {
+        "key": "echographie_abdominale_preparation",
+        "modality": "echographie",
+        "type": "prep",
+        "title": "Echographie abdominale — preparation",
+        "content": "Pour une echographie de l'abdomen, presentez-vous a jeun depuis 6 heures.",
+        "siteSlug": None,
+    },
+    {
+        "key": "documents_general",
+        "modality": None,
+        "type": "doc",
+        "title": "Documents a apporter",
+        "content": "Apportez votre ordonnance, votre carte Vitale et votre mutuelle, une piece d'identite et vos anciens examens.",
+        "siteSlug": None,
+    },
+    {
+        "key": "grossesse_radiologie",
+        "modality": None,
+        "type": "contre_indication",
+        "title": "Grossesse et imagerie",
+        "content": "Signalez toute grossesse avant un examen utilisant des rayons X (radiographie, scanner, mammographie).",
+        "siteSlug": None,
+    },
+    {
+        "key": "horaires_cergy",
+        "modality": None,
+        "type": "horaires",
+        "title": "Horaires — site de Cergy",
+        "content": "Le site de Cergy est ouvert du lundi au vendredi de 8h00 a 19h00 et le samedi de 8h00 a 12h00.",
+        "siteSlug": "cergy",
+    },
+    {
+        "key": "horaires_goussainville",
+        "modality": None,
+        "type": "horaires",
+        "title": "Horaires — site de Goussainville",
+        "content": "Le site de Goussainville est ouvert du lundi au vendredi de 8h30 a 18h30. Ferme le samedi.",
+        "siteSlug": "goussainville",
+    },
+    {
+        "key": "acces_cergy",
+        "modality": None,
+        "type": "acces",
+        "title": "Acces et stationnement — Cergy",
+        "content": "Le site de Cergy est accessible en RER A et dispose d'un parking a proximite.",
+        "siteSlug": "cergy",
+    },
+]

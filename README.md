@@ -88,7 +88,7 @@ CORE_API_URL=http://localhost:4000 SERVICE_API_KEY=<clé> python -m src.simulate
 | 0 | Socle : monorepo, Docker, Postgres/Redis, schéma DB, auth/RBAC, audit | ✅ livré |
 | 1 | Passerelle voix minimale (STT→LLM→TTS, garde-fous médicaux, journalisation appel + transcription) | ✅ livré |
 | 2 | 3CX (trunk SIP, débordement, REFER) | à venir |
-| 3 | Base de connaissance imagerie + RAG | à venir |
+| 3 | Base de connaissance imagerie + RAG (prépa, contre-indications, horaires/accès), éditable + validée | ✅ livré |
 | 4 | Agenda (CalendarProvider + iCal + stub Doctolib partenaire) | à venir |
 | 5 | File de rappel + back-office complet | à venir |
 | 6 | Relances multicanal (WhatsApp/SMS/voix) | à venir |

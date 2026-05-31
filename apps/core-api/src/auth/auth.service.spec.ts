@@ -20,6 +20,7 @@ describe('AuthService', () => {
     process.env.DATABASE_URL = 'postgresql://test';
     process.env.JWT_ACCESS_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+    process.env.SERVICE_API_KEY = 'test-service-key';
   });
 
   beforeEach(() => {

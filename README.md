@@ -61,15 +61,32 @@ pnpm --filter @alpha/back-office dev
 ### Tests
 
 ```bash
-pnpm --filter @alpha/core-api test     # crypto, audit (caviardage), auth, RBAC
+pnpm --filter @alpha/core-api test     # crypto, audit (caviardage), auth, RBAC, calls
+
+# Passerelle voix (Python)
+cd apps/voice-gateway && python -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt && python -m pytest   # garde-fous + boucle agent
 ```
+
+### Simuler un appel de bout en bout (Phase 1)
+
+Avec `core-api` démarré (et `SERVICE_API_KEY` partagé) :
+
+```bash
+cd apps/voice-gateway && . .venv/bin/activate
+CORE_API_URL=http://localhost:4000 SERVICE_API_KEY=<clé> python -m src.simulate_call
+# => crée un `call` + un `transcript` dans core-api (numéro chiffré, audit tracé)
+```
+
+> L'intégration SIP réelle (LiveKit Agents ↔ 3CX) se branche en Phase 2 via
+> `apps/voice-gateway/src/livekit_agent.py` ; la boucle métier est déjà testée.
 
 ## Avancement par phases
 
 | Phase | Contenu | État |
 |------|---------|------|
 | 0 | Socle : monorepo, Docker, Postgres/Redis, schéma DB, auth/RBAC, audit | ✅ livré |
-| 1 | Passerelle voix minimale (STT→LLM→TTS, journalisation appel) | à venir |
+| 1 | Passerelle voix minimale (STT→LLM→TTS, garde-fous médicaux, journalisation appel + transcription) | ✅ livré |
 | 2 | 3CX (trunk SIP, débordement, REFER) | à venir |
 | 3 | Base de connaissance imagerie + RAG | à venir |
 | 4 | Agenda (CalendarProvider + iCal + stub Doctolib partenaire) | à venir |

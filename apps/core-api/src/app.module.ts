@@ -8,8 +8,10 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
+import { CallsModule } from './calls/calls.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
+import { ServiceAuthGuard } from './service-auth/service-auth.guard';
 
 /**
  * Module racine. Branche la configuration, les modules transverses (Prisma,
@@ -27,10 +29,13 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     UsersModule,
     AuthModule,
     HealthModule,
+    CallsModule,
   ],
   providers: [
-    // Ordre important : authentification (JWT) puis autorisation (RBAC).
+    // Ordre : auth utilisateur (JWT, ignore les routes @Public) puis cle de
+    // service (@ServiceOnly) puis autorisation RBAC.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: ServiceAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })

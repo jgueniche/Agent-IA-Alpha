@@ -73,6 +73,11 @@ services:
       context: .
       dockerfile: apps/voice-gateway/Dockerfile
     restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # core-api joignable par le nom de service dans le reseau Docker.
+      CORE_API_URL: http://core-api:4000
     depends_on:
       - core-api
     ports:

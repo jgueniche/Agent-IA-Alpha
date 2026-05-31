@@ -10,6 +10,7 @@ describe('CryptoService', () => {
     process.env.DATABASE_URL = 'postgresql://test';
     process.env.JWT_ACCESS_SECRET = 'test-access';
     process.env.JWT_REFRESH_SECRET = 'test-refresh';
+    process.env.SERVICE_API_KEY = 'test-service';
     crypto = new CryptoService();
   });
 

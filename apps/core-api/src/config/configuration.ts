@@ -25,6 +25,7 @@ export interface AppConfig {
   databaseUrl: string;
   redisUrl: string;
   encryptionKey: string;
+  serviceApiKey: string;
   jwt: {
     accessSecret: string;
     refreshSecret: string;
@@ -48,6 +49,8 @@ export function loadConfig(): AppConfig {
     databaseUrl: required('DATABASE_URL'),
     redisUrl: optional('REDIS_URL', 'redis://redis:6379'),
     encryptionKey: required('ENCRYPTION_KEY'),
+    // Cle partagee gateway voix <-> core-api (ingestion appels/transcriptions).
+    serviceApiKey: required('SERVICE_API_KEY'),
     jwt: {
       accessSecret: required('JWT_ACCESS_SECRET'),
       refreshSecret: required('JWT_REFRESH_SECRET'),

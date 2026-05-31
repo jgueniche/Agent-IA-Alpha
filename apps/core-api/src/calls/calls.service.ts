@@ -77,6 +77,102 @@ export class CallsService {
       ip,
       metadata: { outcome: dto.outcome ?? null },
     });
+
+    // Un appel non résolu (manqué / mis en file) alimente la file de rappel.
+    if (
+      dto.outcome === 'missed' ||
+      dto.outcome === 'callback_queued'
+    ) {
+      await this.ensureCallbackForUnresolvedCall(id, dto.outcome);
+    }
+  }
+
+  /** Crée (idempotemment) une tâche de rappel pour un appel non résolu. */
+  private async ensureCallbackForUnresolvedCall(
+    callId: string,
+    outcome: string,
+  ): Promise<void> {
+    const existing = await this.prisma.callbackTask.findFirst({
+      where: { callId },
+      select: { id: true },
+    });
+    if (existing) return;
+    const task = await this.prisma.callbackTask.create({
+      data: {
+        callId,
+        motif:
+          outcome === 'missed'
+            ? 'Appel manqué — rappeler le patient'
+            : 'Appel non résolu — rappeler le patient',
+        urgency: $Enums.Urgency.none,
+        status: $Enums.CallbackStatus.pending,
+      },
+      select: { id: true },
+    });
+    await this.audit.record({
+      action: 'create',
+      resourceType: 'callback_task',
+      resourceId: task.id,
+      metadata: { reason: 'unresolved_call', outcome },
+    });
+  }
+
+  /** Détail d'un appel pour le back-office (numéro déchiffré → accès tracé). */
+  async getCallDetail(id: string, actorId: string) {
+    const call = await this.prisma.call.findUnique({
+      where: { id },
+      include: { site: { select: { slug: true } } },
+    });
+    if (!call) throw new NotFoundException('Appel introuvable');
+    await this.audit.record({
+      actorId,
+      action: 'read',
+      resourceType: 'call',
+      resourceId: id,
+    });
+    // Lecture d'une donnée d'identité (numéro) → tracée distinctement.
+    const callerNumber = this.crypto.decrypt(call.callerNumber);
+    if (callerNumber) {
+      await this.audit.record({
+        actorId,
+        action: 'read',
+        resourceType: 'caller_number',
+        resourceId: id,
+      });
+    }
+    return {
+      id: call.id,
+      site: call.site?.slug ?? null,
+      direction: call.direction,
+      startedAt: call.startedAt.toISOString(),
+      endedAt: call.endedAt?.toISOString() ?? null,
+      durationSeconds: call.duration,
+      outcome: call.outcome,
+      agentResolved: call.agentResolved,
+      transferredTo: call.transferredTo,
+      callerNumber,
+    };
+  }
+
+  /** Transcription d'un appel (lecture back-office, tracée). */
+  async getTranscript(callId: string, actorId: string) {
+    const transcript = await this.prisma.transcript.findUnique({
+      where: { callId },
+    });
+    if (!transcript) throw new NotFoundException('Transcription introuvable');
+    await this.audit.record({
+      actorId,
+      action: 'read',
+      resourceType: 'transcript',
+      resourceId: callId,
+    });
+    return {
+      callId,
+      segments: transcript.segments,
+      summary: transcript.summary,
+      intent: transcript.intent,
+      urgency: transcript.urgencyFlag,
+    };
   }
 
   /** Cree ou remplace la transcription d'un appel. */

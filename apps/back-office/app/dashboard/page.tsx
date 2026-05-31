@@ -62,7 +62,13 @@ export default function DashboardPage() {
           {profile.permissions.length} permission(s) — le tableau de bord
           temps reel arrive en Phase 5.
         </p>
-        <a href="/knowledge" style={{ color: 'var(--accent)' }}>
+        <a href="/calls" style={{ color: 'var(--accent)', display: 'block' }}>
+          → Journal d'appels
+        </a>
+        <a href="/callbacks" style={{ color: 'var(--accent)', display: 'block' }}>
+          → File de rappel
+        </a>
+        <a href="/knowledge" style={{ color: 'var(--accent)', display: 'block' }}>
           → Base de connaissance imagerie
         </a>
         <button onClick={logout} style={{ marginTop: '0.75rem' }}>

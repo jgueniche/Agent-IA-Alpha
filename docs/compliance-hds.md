@@ -23,7 +23,8 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 
 - [x] `audit_log` **append-only** (aucune route ne met à jour/supprime ces lignes).
 - [x] Tous les accès/échecs d'auth tracés (`AuthService` audite login / login_failed).
-- [ ] Toute **consultation de donnée patient** tracée (intercepteur d'audit — Phases 5/7).
+- [x] **Consultation de donnée patient** tracée : lecture d'appels/transcriptions,
+  numéro déchiffré (`caller_number`), file de rappel et click-to-call audités (Phase 5).
 - [x] **Aucune donnée de santé** dans l'audit : caviardage des clés sensibles (`AuditService.sanitize`).
 
 ## Données patient

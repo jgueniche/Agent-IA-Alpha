@@ -75,4 +75,21 @@ export class CallsController {
   list(@CurrentUser() user: AuthenticatedUser) {
     return this.calls.listCalls(user.id);
   }
+
+  /** Detail d'un appel (numero appelant dechiffre — acces trace). */
+  @RequirePermissions(Permission.CALLS_READ)
+  @Get(':id')
+  detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.calls.getCallDetail(id, user.id);
+  }
+
+  /** Transcription d'un appel (acces trace). */
+  @RequirePermissions(Permission.TRANSCRIPTS_READ)
+  @Get(':id/transcript')
+  transcriptRead(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.calls.getTranscript(id, user.id);
+  }
 }

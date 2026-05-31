@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@alpha/domain": "workspace:*",
+    "@alpha/messaging": "workspace:*",
     "@alpha/providers": "workspace:*",
     "@alpha/telephony": "workspace:*",
     "@nestjs/common": "^11.0.0",
@@ -30,6 +31,7 @@
     "@nestjs/platform-express": "^11.0.0",
     "@prisma/client": "^6.2.0",
     "bcrypt": "^5.1.1",
+    "bullmq": "^5.34.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "helmet": "^8.0.0",

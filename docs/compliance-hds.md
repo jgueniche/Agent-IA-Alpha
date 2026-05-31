@@ -38,7 +38,9 @@ checklist suit l'avancement ; l'implémentation complète est consolidée en
 
 - [x] Modèle `Consent` avec types **distincts** (enregistrement, relance transactionnelle, marketing, traitement).
 - [ ] Message d'accueil légal + recueil du consentement à l'enregistrement (Phase 1/2).
-- [ ] Opt-out relances respecté (`Followup.optOut`) — moteur en Phase 6.
+- [x] Opt-out relances respecté (`Followup.optOut`) + consentement distinct
+  transactionnel/marketing vérifié avant envoi ; fenêtre horaire autorisée (Phase 6).
+- [x] Enregistrement des consentements patient (`POST /patients/:id/consents`, Phase 6).
 
 ## Rétention & purge
 

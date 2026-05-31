@@ -68,6 +68,9 @@ export default function DashboardPage() {
         <a href="/callbacks" style={{ color: 'var(--accent)', display: 'block' }}>
           → File de rappel
         </a>
+        <a href="/followups" style={{ color: 'var(--accent)', display: 'block' }}>
+          → Relances
+        </a>
         <a href="/knowledge" style={{ color: 'var(--accent)', display: 'block' }}>
           → Base de connaissance imagerie
         </a>

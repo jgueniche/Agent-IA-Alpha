@@ -91,7 +91,7 @@ CORE_API_URL=http://localhost:4000 SERVICE_API_KEY=<clé> python -m src.simulate
 | 3 | Base de connaissance imagerie + RAG (prépa, contre-indications, horaires/accès), éditable + validée | ✅ livré |
 | 4 | Agenda : CalendarProvider + iCal (lecture réelle) → cache, stub Doctolib partenaire, déport RDV en tâche de rappel | ✅ livré |
 | 5 | File de rappel + back-office (journal d'appels, transcriptions, assignation, click-to-call) | ✅ livré |
-| 6 | Relances multicanal (WhatsApp/SMS/voix) | à venir |
+| 6 | Relances multicanal (WhatsApp/SMS/voix) : consentement, opt-out, fenêtre horaire, BullMQ, traçabilité | ✅ livré |
 | 7 | Conformité (chiffrement, rétention/purge, consentements) | à venir |
 | 8 | Supervision & qualité (métriques, charge, E2E) | à venir |
 

@@ -230,10 +230,14 @@ model Followup {
   patientId   String?
   channel     FollowupChannel
   template    String
+  // Distinction consentement : marketing vs transactionnel (rappel de RDV...).
+  marketing   Boolean         @default(false)
   scheduledAt DateTime
   status      FollowupStatus  @default(scheduled)
   optOut      Boolean         @default(false)
   sentAt      DateTime?
+  providerRef String? // référence d'envoi (traçabilité)
+  failureReason String?
   createdAt   DateTime        @default(now())
 
   patient Patient? @relation(fields: [patientId], references: [id])

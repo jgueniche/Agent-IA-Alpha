@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
   && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
-# Installe les dependances de tout le workspace puis build domain + core-api.
+# Installe les dependances de tout le workspace puis build core-api et tous
+# ses packages internes (domain, messaging, providers, telephony) en ordre topologique.
 COPY . .
 RUN pnpm install --frozen-lockfile=false
-RUN pnpm --filter @alpha/domain build
-RUN pnpm --filter @alpha/core-api build
+RUN pnpm --filter "@alpha/core-api..." build
 
 # --- Etape runtime -----------------------------------------------------------
 FROM node:22-slim AS runner

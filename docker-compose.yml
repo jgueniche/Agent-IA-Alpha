@@ -64,6 +64,7 @@ services:
       dockerfile: apps/back-office/Dockerfile
       args:
         NEXT_PUBLIC_CORE_API_URL: ${NEXT_PUBLIC_CORE_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_VOICE_GATEWAY_URL: ${NEXT_PUBLIC_VOICE_GATEWAY_URL:-http://localhost:8080}
     restart: unless-stopped
     depends_on:
       - core-api
@@ -80,6 +81,10 @@ services:
     environment:
       # core-api joignable par le nom de service dans le reseau Docker.
       CORE_API_URL: http://core-api:4000
+      # Modeles IA locaux (whisper/piper) persistes dans un volume.
+      MODELS_DIR: /models
+    volumes:
+      - voicemodels:/models
     depends_on:
       - core-api
     ports:
@@ -88,3 +93,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  voicemodels:

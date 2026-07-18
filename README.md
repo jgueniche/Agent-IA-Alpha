@@ -49,6 +49,22 @@ bash scripts/demo.sh        # génère un .env de démo + lance toute la stack (
 > urgent / manqué / prépa), 3 tâches de rappel, 2 relances, 3 créneaux et la base de
 > connaissance. Données 100% fictives.
 
+## Parler à l'agent à la voix (sans téléphonie, 100 % gratuit)
+
+La page **« Tester l'agent »** du back-office (`/test-agent`) permet un vrai
+appel vocal depuis le micro du navigateur : STT **faster-whisper** + TTS
+**Piper**, exécutés **en local** dans le conteneur `voice-gateway` (aucun
+cloud, aucune clé API). L'appel est journalisé comme un appel téléphonique
+(journal, transcription, métriques de supervision).
+
+- Premier lancement : les modèles (~600 Mo) sont téléchargés automatiquement
+  dans le volume `voicemodels` — comptez quelques minutes, puis c'est instantané.
+- Latence typique d'un tour de parole : 1 à 3 s sur un poste de travail (CPU).
+- Réglages dans `.env` : `WHISPER_MODEL` (tiny/base/small/medium) et
+  `PIPER_VOICE`. Sans `LLM_ENDPOINT`, la conversation ouverte est scriptée ;
+  les réponses réelles viennent des garde-fous, de la base de connaissance et
+  de l'agenda (le LLM Mistral se branche plus tard par simple configuration).
+
 ## Démarrage rapide (Phase 0)
 
 ```bash

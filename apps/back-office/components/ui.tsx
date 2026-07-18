@@ -96,6 +96,16 @@ export const IconAlert = icon(
 
 export const IconCheck = icon(<path d="M20 6 9 17l-5-5" />);
 
+export const IconMic = icon(
+  <>
+    <rect x="9" y="2" width="6" height="12" rx="3" />
+    <path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+    <path d="M12 18v4" />
+  </>,
+);
+
+export const IconStop = icon(<rect x="6" y="6" width="12" height="12" rx="2" />);
+
 /* --- Briques UI -------------------------------------------------------------- */
 
 export function Badge({ info }: { info: LabelInfo }) {

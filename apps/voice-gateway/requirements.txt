@@ -1,4 +1,9 @@
-# Phase 0 : socle minimal (serveur de sante).
-# Les dependances temps reel (livekit-agents / pipecat, faster-whisper, etc.)
-# seront ajoutees en Phase 1.
+# Socle passerelle voix + IA locale gratuite (STT/TTS auto-hébergés).
+# Les dépendances téléphonie temps réel (LiveKit) restent dans
+# requirements-livekit.txt (lourdes, installées seulement en Phase 2).
 aiohttp==3.11.11
+# STT local : faster-whisper (CPU int8), modèles téléchargés dans MODELS_DIR.
+faster-whisper==1.2.1
+# TTS local : Piper (voix fr_FR-siwis-medium par défaut).
+piper-tts==1.5.0
+numpy>=2.0

@@ -9,6 +9,7 @@ import {
   IconGauge,
   IconHome,
   IconLogout,
+  IconMic,
   IconPhone,
   IconPhoneCallback,
   IconSend,
@@ -27,6 +28,7 @@ const NAV = [
   { href: '/callbacks', label: 'File de rappel', icon: IconPhoneCallback, section: 'Traitement' },
   { href: '/followups', label: 'Relances', icon: IconSend, section: null },
   { href: '/knowledge', label: 'Base de connaissance', icon: IconBook, section: 'Référentiel' },
+  { href: '/test-agent', label: "Tester l'agent", icon: IconMic, section: 'Essais' },
 ] as const;
 
 function initials(name: string): string {

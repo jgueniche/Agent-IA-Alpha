@@ -50,12 +50,48 @@ class VoiceAgent:
         )
         return self.call_id
 
+    GREETING_FR = (
+        "Centre d'imagerie Alpha, bonjour ! Je suis l'assistante vocale. "
+        "Comment puis-je vous aider ?"
+    )
+
+    @property
+    def transfer_requested(self) -> bool:
+        """Vrai si l'appel doit etre transfere a un humain (urgence, resultats…)."""
+        return self._transfer_requested
+
+    @property
+    def last_turn(self) -> tuple[str | None, str | None]:
+        """Textes (patient, agent) du dernier tour de parole traite."""
+        patient = next(
+            (s["text"] for s in reversed(self._segments) if s["speaker"] == "patient"),
+            None,
+        )
+        agent = next(
+            (s["text"] for s in reversed(self._segments) if s["speaker"] == "agent"),
+            None,
+        )
+        return patient, agent
+
+    async def greet(self, text: str | None = None) -> bytes:
+        """Message d'accueil de l'agent : journalise + synthetise."""
+        greeting = text or self.GREETING_FR
+        offset = time.monotonic() - self._start_ts if self._start_ts else 0.0
+        self._segments.append(
+            {"speaker": "agent", "ts": round(offset, 2), "text": greeting}
+        )
+        self._history.append(LlmMessage(role="assistant", content=greeting))
+        return await self.tts.synthesize(greeting, voice="fr_FR-female")
+
     async def handle_user_audio(self, audio: bytes, ts: float | None = None) -> bytes:
         """Traite un tour de parole patient et renvoie l'audio de la reponse."""
         offset = ts if ts is not None else (time.monotonic() - self._start_ts)
         # Latence percue : du debut du traitement a la reponse synthetisee.
         turn_start = time.monotonic()
         text = await self.stt.transcribe(audio, language="fr")
+        if not text.strip():
+            # Rien d'exploitable (silence, bruit) : pas de tour a journaliser.
+            return b""
         self._segments.append({"speaker": "patient", "ts": round(offset, 2), "text": text})
 
         reply = await self._decide_reply(text)

@@ -25,6 +25,11 @@ class Config:
     tts_endpoint: str | None
     tts_voice_fr: str
 
+    # Modèles IA locaux (gratuits, auto-hébergés) : faster-whisper + Piper.
+    whisper_model: str
+    piper_voice: str
+    models_dir: str
+
     # Telephonie / LiveKit SIP (Phase 2). Voir docs/3cx-setup.md.
     livekit_url: str | None
     livekit_api_key: str | None
@@ -50,6 +55,9 @@ def load_config() -> Config:
         tts_provider=os.environ.get("TTS_PROVIDER", "mock"),
         tts_endpoint=os.environ.get("TTS_ENDPOINT") or None,
         tts_voice_fr=os.environ.get("TTS_VOICE_FR", "fr_FR-female"),
+        whisper_model=os.environ.get("WHISPER_MODEL", "small"),
+        piper_voice=os.environ.get("PIPER_VOICE", "fr_FR-siwis-medium"),
+        models_dir=os.environ.get("MODELS_DIR", os.path.expanduser("~/.cache/alpha-voice-models")),
         livekit_url=os.environ.get("LIVEKIT_URL") or None,
         livekit_api_key=os.environ.get("LIVEKIT_API_KEY") or None,
         livekit_api_secret=os.environ.get("LIVEKIT_API_SECRET") or None,

@@ -769,6 +769,70 @@ table.table {
   line-height: 1.45;
 }
 
+/* --- Appel de test (Tester l'agent) ----------------------------------------------- */
+
+.call-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--neutral-soft);
+  color: var(--text-2);
+}
+.call-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.call-status.live { background: var(--green-soft); color: var(--green); }
+.call-status.busy { background: var(--amber-soft); color: var(--amber); }
+.call-status.err  { background: var(--red-soft); color: var(--red); }
+
+@keyframes pulse-rec {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 45, 32, 0.35); }
+  50% { box-shadow: 0 0 0 12px rgba(217, 45, 32, 0); }
+}
+.talk-btn {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: #fff;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.talk-btn svg { width: 30px; height: 30px; }
+.talk-btn:hover:not(:disabled) { background: var(--primary-hover); transform: scale(1.03); }
+.talk-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.talk-btn.recording {
+  background: var(--red);
+  animation: pulse-rec 1.4s infinite;
+}
+
+.call-panel {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .call-panel { grid-template-columns: 1fr; }
+}
+
+.call-transcript {
+  min-height: 380px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 /* --- Divers ---------------------------------------------------------------------- */
 
 .row {

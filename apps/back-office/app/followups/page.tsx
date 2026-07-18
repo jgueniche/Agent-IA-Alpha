@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getToken } from '../../lib/api';
 import {
   Followup,
   cancelFollowup,
@@ -10,16 +8,31 @@ import {
   dispatchFollowups,
   listFollowups,
 } from '../../lib/followups';
+import { AppShell } from '../../components/AppShell';
+import {
+  Alerts,
+  Badge,
+  EmptyState,
+  IconSend,
+  LoadingCard,
+  PageHeader,
+} from '../../components/ui';
+import {
+  CHANNEL,
+  FOLLOWUP_STATUS,
+  formatDateTime,
+  labelOf,
+} from '../../lib/labels';
 
-/** Gestion des relances (programmation, suivi, opt-out via statut). */
+/** Relances multicanal : programmation, envoi et suivi. */
 export default function FollowupsPage() {
-  const router = useRouter();
-  const [items, setItems] = useState<Followup[]>([]);
+  const [items, setItems] = useState<Followup[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [patientId, setPatientId] = useState('');
   const [channel, setChannel] = useState('sms');
   const [template, setTemplate] = useState('rappel_rdv');
+  const [busy, setBusy] = useState(false);
 
   async function reload() {
     try {
@@ -30,17 +43,14 @@ export default function FollowupsPage() {
   }
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
     void reload();
-  }, [router]);
+  }, []);
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setBusy(true);
     try {
       await createFollowup({
         patientId: patientId || undefined,
@@ -52,11 +62,14 @@ export default function FollowupsPage() {
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setBusy(false);
     }
   }
 
   async function onDispatch() {
     setError(null);
+    setInfo(null);
     try {
       const r = await dispatchFollowups();
       setInfo(`${r.sent} relance(s) envoyée(s)`);
@@ -66,48 +79,132 @@ export default function FollowupsPage() {
     }
   }
 
-  return (
-    <main style={{ maxWidth: 880, margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1>Relances</h1>
-      {error && <p className="error">{error}</p>}
-      {info && <p style={{ color: '#34d399' }}>{info}</p>}
+  async function onCancel(id: string) {
+    setError(null);
+    setInfo(null);
+    try {
+      await cancelFollowup(id);
+      setInfo('Relance annulée');
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
 
-      <form className="card" onSubmit={onCreate} style={{ maxWidth: '100%' }}>
-        <strong>Programmer une relance</strong>
-        <input placeholder="patientId (optionnel)" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <select value={channel} onChange={(e) => setChannel(e.target.value)} style={{ padding: '0.4rem', borderRadius: 8 }}>
-            <option value="sms">sms</option>
-            <option value="whatsapp">whatsapp</option>
-            <option value="voice">voice</option>
-          </select>
-          <input placeholder="template" value={template} onChange={(e) => setTemplate(e.target.value)} />
+  return (
+    <AppShell>
+      <PageHeader
+        title="Relances"
+        sub="Rappels SMS, WhatsApp ou vocaux envoyés aux patients (consentement et fenêtres horaires gérés automatiquement)."
+        actions={
+          <button className="btn btn-secondary" onClick={onDispatch}>
+            <IconSend />
+            Traiter les relances dues
+          </button>
+        }
+      />
+      <Alerts error={error} info={info} />
+
+      <form className="card card-pad" onSubmit={onCreate} style={{ marginBottom: 20 }}>
+        <div className="card-title">Programmer une relance</div>
+        <div className="row" style={{ alignItems: 'flex-end', gap: 12 }}>
+          <div className="field" style={{ flex: 2, minWidth: 180, marginBottom: 0 }}>
+            <label htmlFor="patientId">Identifiant patient (optionnel)</label>
+            <input
+              id="patientId"
+              className="input"
+              placeholder="ex. pat_0192…"
+              value={patientId}
+              onChange={(e) => setPatientId(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ flex: 1, minWidth: 130, marginBottom: 0 }}>
+            <label htmlFor="channel">Canal</label>
+            <select
+              id="channel"
+              className="select"
+              value={channel}
+              onChange={(e) => setChannel(e.target.value)}
+            >
+              <option value="sms">SMS</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="voice">Appel vocal</option>
+            </select>
+          </div>
+          <div className="field" style={{ flex: 1, minWidth: 140, marginBottom: 0 }}>
+            <label htmlFor="template">Modèle</label>
+            <input
+              id="template"
+              className="input"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={busy}>
+            Programmer
+          </button>
         </div>
-        <button type="submit">Programmer (maintenant)</button>
       </form>
 
-      <button onClick={onDispatch} style={{ width: 'auto', margin: '1rem 0' }}>
-        Traiter les relances dues
-      </button>
+      {!items && !error && <LoadingCard lines={4} />}
 
-      {items.map((f) => (
-        <div key={f.id} className="card" style={{ maxWidth: '100%', marginBottom: '0.5rem' }}>
-          <strong>{f.template}</strong>{' '}
-          <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
-            [{f.channel} · {f.status}
-            {f.marketing ? ' · marketing' : ' · transactionnel'}]
-            {f.sentAt ? ` · envoyé ${new Date(f.sentAt).toLocaleString('fr-FR')}` : ''}
-          </span>
-          {(f.status === 'scheduled') && (
-            <button
-              style={{ width: 'auto', marginTop: '0.5rem' }}
-              onClick={() => cancelFollowup(f.id).then(reload)}
-            >
-              Annuler
-            </button>
-          )}
+      {items && items.length === 0 && (
+        <div className="card">
+          <EmptyState
+            icon={IconSend}
+            title="Aucune relance"
+            hint="Programmez une relance ci-dessus, ou attendez que l'agent en génère."
+          />
         </div>
-      ))}
-    </main>
+      )}
+
+      {items && items.length > 0 && (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Modèle</th>
+                <th>Canal</th>
+                <th>Statut</th>
+                <th>Type</th>
+                <th>Programmée / envoyée</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((f) => (
+                <tr key={f.id}>
+                  <td className="td-strong">{f.template}</td>
+                  <td>
+                    <Badge info={labelOf(CHANNEL, f.channel)} />
+                  </td>
+                  <td>
+                    <Badge info={labelOf(FOLLOWUP_STATUS, f.status)} />
+                  </td>
+                  <td className="td-muted">
+                    {f.marketing ? 'Marketing' : 'Transactionnel'}
+                  </td>
+                  <td className="td-muted">
+                    {f.sentAt
+                      ? `Envoyée ${formatDateTime(f.sentAt)}`
+                      : formatDateTime(f.scheduledAt)}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    {f.status === 'scheduled' && (
+                      <button
+                        className="btn btn-danger-ghost btn-sm"
+                        onClick={() => onCancel(f.id)}
+                      >
+                        Annuler
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </AppShell>
   );
 }

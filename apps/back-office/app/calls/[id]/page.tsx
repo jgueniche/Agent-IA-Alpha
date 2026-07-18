@@ -1,73 +1,160 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getToken } from '../../../lib/api';
 import {
   CallDetail,
   Transcript,
   getCall,
   getTranscript,
 } from '../../../lib/calls';
+import { AppShell } from '../../../components/AppShell';
+import {
+  Alerts,
+  Badge,
+  EmptyState,
+  IconArrowLeft,
+  LoadingCard,
+  PageHeader,
+} from '../../../components/ui';
+import {
+  DIRECTION,
+  INTENT,
+  OUTCOME,
+  SITE,
+  URGENCY,
+  formatDateTime,
+  labelOf,
+  textOf,
+} from '../../../lib/labels';
 
-/** Détail d'un appel : métadonnées, numéro (tracé) et transcription. */
+/** Détail d'un appel : fiche, qualification et transcription. */
 export default function CallDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
   const [call, setCall] = useState<CallDetail | null>(null);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
     getCall(id)
       .then(setCall)
       .catch((e) => setError(e.message));
     getTranscript(id)
       .then(setTranscript)
       .catch(() => setTranscript(null));
-  }, [id, router]);
-
-  if (error) return <main className="center"><p className="error">{error}</p></main>;
-  if (!call) return <main className="center"><div className="card">Chargement…</div></main>;
+  }, [id]);
 
   return (
-    <main style={{ maxWidth: 760, margin: '0 auto', padding: '2rem 1rem' }}>
-      <a href="/calls" style={{ color: 'var(--accent)' }}>← Journal</a>
-      <h1>Appel — {call.site ?? '?'}</h1>
-      <div className="card" style={{ maxWidth: '100%' }}>
-        <p>Début : {new Date(call.startedAt).toLocaleString('fr-FR')}</p>
-        <p>Résultat : <strong>{call.outcome}</strong> {call.agentResolved ? '(résolu IA)' : ''}</p>
-        <p>Numéro : {call.callerNumber ?? 'non communiqué'}</p>
-        {call.transferredTo && <p>Transféré vers : {call.transferredTo}</p>}
-      </div>
+    <AppShell>
+      <a href="/calls" className="back-link">
+        <IconArrowLeft style={{ width: 15, height: 15 }} />
+        Journal d'appels
+      </a>
 
-      <h2>Transcription</h2>
-      {!transcript && <p>Pas de transcription.</p>}
-      {transcript && (
-        <div className="card" style={{ maxWidth: '100%' }}>
-          {transcript.summary && (
-            <p style={{ opacity: 0.85 }}>
-              <em>Résumé : {transcript.summary}</em>
-            </p>
+      <Alerts error={error} />
+      {!call && !error && <LoadingCard lines={4} />}
+
+      {call && (
+        <>
+          <PageHeader
+            title={`Appel — ${textOf(SITE, call.site)}`}
+            sub={`${textOf(DIRECTION, call.direction)} · ${formatDateTime(call.startedAt)}`}
+            actions={
+              <>
+                <Badge info={labelOf(OUTCOME, call.outcome)} />
+                {call.urgency !== 'none' && (
+                  <Badge info={labelOf(URGENCY, call.urgency)} />
+                )}
+              </>
+            }
+          />
+
+          <div className="card card-pad" style={{ marginBottom: 20 }}>
+            <div className="meta-grid">
+              <div>
+                <div className="meta-label">Début</div>
+                <div className="meta-value">{formatDateTime(call.startedAt)}</div>
+              </div>
+              <div>
+                <div className="meta-label">Fin</div>
+                <div className="meta-value">{formatDateTime(call.endedAt)}</div>
+              </div>
+              <div>
+                <div className="meta-label">Numéro appelant</div>
+                <div className="meta-value">
+                  {call.callerNumber ?? 'Non communiqué'}
+                </div>
+              </div>
+              <div>
+                <div className="meta-label">Résolu par l'IA</div>
+                <div className="meta-value">{call.agentResolved ? 'Oui' : 'Non'}</div>
+              </div>
+              {call.transferredTo && (
+                <div>
+                  <div className="meta-label">Transféré vers</div>
+                  <div className="meta-value">{call.transferredTo}</div>
+                </div>
+              )}
+              {transcript?.intent && (
+                <div>
+                  <div className="meta-label">Motif détecté</div>
+                  <div className="meta-value">{textOf(INTENT, transcript.intent)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {transcript?.summary && (
+            <div
+              className="card card-pad"
+              style={{ marginBottom: 20, background: 'var(--surface-2)' }}
+            >
+              <div className="card-title">Résumé de l'appel</div>
+              <p style={{ margin: 0, color: 'var(--text-2)' }}>{transcript.summary}</p>
+            </div>
           )}
-          <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-            Intention : {transcript.intent ?? '—'} · Urgence : {transcript.urgency}
-          </p>
-          {transcript.segments.map((s, i) => (
-            <p key={i} style={{ margin: '0.3rem 0' }}>
-              <strong>{s.speaker === 'patient' ? 'Patient' : 'Agent'} :</strong> {s.text}
-            </p>
-          ))}
-        </div>
+
+          <h2 className="section-title">Transcription</h2>
+          {!transcript && (
+            <div className="card">
+              <EmptyState
+                title="Pas de transcription"
+                hint="Cet appel n'a pas de transcription disponible."
+              />
+            </div>
+          )}
+          {transcript && transcript.segments.length > 0 && (
+            <div className="card card-pad">
+              <div className="transcript">
+                {transcript.segments.map((s, i) => {
+                  const isPatient = s.speaker === 'patient';
+                  return (
+                    <div key={i} className={`bubble-row ${isPatient ? 'patient' : 'agent'}`}>
+                      <div className="bubble">
+                        <div className="bubble-speaker">
+                          {isPatient ? 'Patient' : 'Agent IA'}
+                        </div>
+                        {s.text}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {transcript && transcript.segments.length === 0 && (
+            <div className="card">
+              <EmptyState
+                title="Transcription vide"
+                hint="Aucun échange n'a été capté sur cet appel (appel manqué ou raccroché)."
+              />
+            </div>
+          )}
+        </>
       )}
-    </main>
+    </AppShell>
   );
 }

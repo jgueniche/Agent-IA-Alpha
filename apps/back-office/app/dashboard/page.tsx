@@ -1,86 +1,89 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { clearToken, getToken, me } from '../../lib/api';
+import { me } from '../../lib/api';
+import { AppShell } from '../../components/AppShell';
+import {
+  IconBook,
+  IconGauge,
+  IconPhone,
+  IconPhoneCallback,
+  IconSend,
+  PageHeader,
+} from '../../components/ui';
 
 interface Profile {
-  email: string;
   displayName: string;
   role: string;
-  permissions: string[];
 }
 
-/** Tableau de bord (coquille Phase 0) : confirme la session et le role. */
+const SECTIONS = [
+  {
+    href: '/callbacks',
+    icon: IconPhoneCallback,
+    title: 'File de rappel',
+    desc: 'Patients à rappeler suite aux appels non résolus par l’agent. À traiter en priorité.',
+  },
+  {
+    href: '/calls',
+    icon: IconPhone,
+    title: "Journal d'appels",
+    desc: 'Historique des appels pris par l’agent vocal, avec transcriptions et résultats.',
+  },
+  {
+    href: '/followups',
+    icon: IconSend,
+    title: 'Relances',
+    desc: 'Relances SMS / WhatsApp / vocales : programmation, suivi des envois, opt-out.',
+  },
+  {
+    href: '/knowledge',
+    icon: IconBook,
+    title: 'Base de connaissance',
+    desc: 'Préparations d’examens, horaires, accès… Les réponses que l’agent donne aux patients.',
+  },
+  {
+    href: '/supervision',
+    icon: IconGauge,
+    title: 'Supervision',
+    desc: 'Métriques de l’agent : taux de résolution, transferts, latence, motifs (responsable/admin).',
+  },
+];
+
+/** Accueil : point d'entrée vers les sections du back-office. */
 export default function DashboardPage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
     me()
       .then(setProfile)
-      .catch((e) => setError(e.message));
-  }, [router]);
+      .catch(() => setProfile(null));
+  }, []);
 
-  function logout() {
-    clearToken();
-    router.replace('/login');
-  }
-
-  if (error) {
-    return (
-      <main className="center">
-        <div className="card">
-          <p className="error">{error}</p>
-          <button onClick={() => router.replace('/login')}>Se reconnecter</button>
-        </div>
-      </main>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <main className="center">
-        <div className="card">Chargement…</div>
-      </main>
-    );
-  }
+  const hello = profile ? `Bonjour ${profile.displayName.split(' ')[0]} 👋` : 'Bonjour 👋';
 
   return (
-    <main className="center">
-      <div className="card">
-        <h1>Bonjour {profile.displayName}</h1>
-        <p>
-          Role : <strong>{profile.role}</strong>
-        </p>
-        <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-          {profile.permissions.length} permission(s) — le tableau de bord
-          temps reel arrive en Phase 5.
-        </p>
-        <a href="/calls" style={{ color: 'var(--accent)', display: 'block' }}>
-          → Journal d'appels
-        </a>
-        <a href="/callbacks" style={{ color: 'var(--accent)', display: 'block' }}>
-          → File de rappel
-        </a>
-        <a href="/followups" style={{ color: 'var(--accent)', display: 'block' }}>
-          → Relances
-        </a>
-        <a href="/knowledge" style={{ color: 'var(--accent)', display: 'block' }}>
-          → Base de connaissance imagerie
-        </a>
-        <a href="/supervision" style={{ color: 'var(--accent)', display: 'block' }}>
-          → Supervision (responsable/admin)
-        </a>
-        <button onClick={logout} style={{ marginTop: '0.75rem' }}>
-          Se deconnecter
-        </button>
+    <AppShell>
+      <PageHeader
+        title={hello}
+        sub="L'agent vocal répond aux appels en débordement ; voici ce qui demande votre attention."
+      />
+      <div className="hub-grid">
+        {SECTIONS.map((s) => {
+          const Icon = s.icon;
+          return (
+            <a key={s.href} href={s.href} className="hub-card">
+              <div className="hub-icon">
+                <Icon />
+              </div>
+              <div>
+                <div className="hub-title">{s.title}</div>
+                <div className="hub-desc">{s.desc}</div>
+              </div>
+            </a>
+          );
+        })}
       </div>
-    </main>
+    </AppShell>
   );
 }

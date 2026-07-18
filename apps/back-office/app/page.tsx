@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-/** Racine : redirige vers la connexion (Phase 0). */
+/** Racine : renvoie vers l'accueil (la garde d'auth redirige vers /login si besoin). */
 export default function Home() {
-  redirect('/login');
+  redirect('/dashboard');
 }

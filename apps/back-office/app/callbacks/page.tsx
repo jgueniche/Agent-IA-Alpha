@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getToken } from '../../lib/api';
 import {
   CallbackTask,
   assignMe,
@@ -10,13 +8,30 @@ import {
   listCallbacks,
   updateCallback,
 } from '../../lib/callbacks';
+import { AppShell } from '../../components/AppShell';
+import {
+  Alerts,
+  Badge,
+  EmptyState,
+  IconPhone,
+  IconPhoneCallback,
+  LoadingCard,
+  PageHeader,
+} from '../../components/ui';
+import {
+  CALLBACK_STATUS,
+  SITE,
+  URGENCY,
+  formatDateTime,
+  labelOf,
+  textOf,
+} from '../../lib/labels';
 
 const STATUSES = ['pending', 'assigned', 'in_progress', 'done', 'cancelled'];
 
-/** File de rappel : appels non résolus à traiter par les secrétaires. */
+/** File de rappel : appels non résolus, à traiter par les secrétaires. */
 export default function CallbacksPage() {
-  const router = useRouter();
-  const [tasks, setTasks] = useState<CallbackTask[]>([]);
+  const [tasks, setTasks] = useState<CallbackTask[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -29,12 +44,8 @@ export default function CallbacksPage() {
   }
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
     void reload();
-  }, [router]);
+  }, []);
 
   async function act(fn: () => Promise<unknown>, ok?: string) {
     setError(null);
@@ -50,6 +61,7 @@ export default function CallbacksPage() {
 
   async function onCall(id: string) {
     setError(null);
+    setInfo(null);
     try {
       const r = await clickToCall(id);
       setInfo(`Rappel initié vers ${r.to}`);
@@ -58,42 +70,103 @@ export default function CallbacksPage() {
     }
   }
 
-  return (
-    <main style={{ maxWidth: 920, margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1>File de rappel</h1>
-      {error && <p className="error">{error}</p>}
-      {info && <p style={{ color: '#34d399' }}>{info}</p>}
-      {tasks.length === 0 && <p>Aucune tâche de rappel.</p>}
-      {tasks.map((t) => (
-        <div key={t.id} className="card" style={{ maxWidth: '100%', marginBottom: '0.75rem' }}>
-          <strong>{t.motif}</strong>{' '}
-          <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
-            [{t.status}
-            {t.urgency !== 'none' ? ` · urgence ${t.urgency}` : ''}
-            {t.assignedTo ? ` · ${t.assignedTo.displayName}` : ' · non assigné'}]
-            {t.call?.site ? ` · ${t.call.site.slug}` : ''}
+  const open = tasks?.filter((t) => !['done', 'cancelled'].includes(t.status)) ?? [];
+  const closed = tasks?.filter((t) => ['done', 'cancelled'].includes(t.status)) ?? [];
+
+  function TaskCard({ t }: { t: CallbackTask }) {
+    return (
+      <div className="card card-pad" style={{ marginBottom: 10 }}>
+        <div className="row" style={{ marginBottom: 8 }}>
+          <span className="td-strong" style={{ fontSize: 14.5 }}>{t.motif}</span>
+          <Badge info={labelOf(CALLBACK_STATUS, t.status)} />
+          {t.urgency !== 'none' && <Badge info={labelOf(URGENCY, t.urgency)} />}
+          <span className="spacer" />
+          <span className="td-muted">
+            {t.call?.site ? `${textOf(SITE, t.call.site.slug)} · ` : ''}
+            {formatDateTime(t.createdAt)}
           </span>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-            <button style={{ width: 'auto' }} onClick={() => act(() => assignMe(t.id), 'Assigné')}>
-              S'assigner
-            </button>
-            <button style={{ width: 'auto' }} onClick={() => onCall(t.id)}>
-              📞 Rappeler
-            </button>
-            <select
-              value={t.status}
-              onChange={(e) => act(() => updateCallback(t.id, { status: e.target.value }))}
-              style={{ padding: '0.4rem', borderRadius: 8 }}
-            >
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
+        <div className="row" style={{ marginBottom: 10 }}>
+          <span className="td-muted">
+            {t.assignedTo
+              ? `Assignée à ${t.assignedTo.displayName}`
+              : 'Non assignée'}
+            {t.dueAt ? ` · à rappeler avant ${formatDateTime(t.dueAt)}` : ''}
+          </span>
+        </div>
+        {t.notes && (
+          <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--text-2)' }}>
+            {t.notes}
+          </p>
+        )}
+        <div className="row">
+          {!['done', 'cancelled'].includes(t.status) && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => onCall(t.id)}
+            >
+              <IconPhone />
+              Rappeler
+            </button>
+          )}
+          {!t.assignedTo && (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => act(() => assignMe(t.id), 'Tâche assignée')}
+            >
+              Me l'assigner
+            </button>
+          )}
+          <span className="spacer" />
+          <select
+            className="select select-sm"
+            value={t.status}
+            onChange={(e) => act(() => updateCallback(t.id, { status: e.target.value }))}
+            aria-label="Changer le statut"
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {labelOf(CALLBACK_STATUS, s).label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AppShell>
+      <PageHeader
+        title="File de rappel"
+        sub="Patients à rappeler suite aux appels que l'agent n'a pas pu résoudre."
+      />
+      <Alerts error={error} info={info} />
+
+      {!tasks && !error && <LoadingCard lines={4} />}
+
+      {tasks && tasks.length === 0 && (
+        <div className="card">
+          <EmptyState
+            icon={IconPhoneCallback}
+            title="Aucun rappel en attente"
+            hint="Bravo, la file est vide. Les nouvelles demandes apparaîtront ici."
+          />
+        </div>
+      )}
+
+      {open.map((t) => (
+        <TaskCard key={t.id} t={t} />
       ))}
-    </main>
+
+      {closed.length > 0 && (
+        <>
+          <h2 className="section-title">Traitées récemment</h2>
+          {closed.map((t) => (
+            <TaskCard key={t.id} t={t} />
+          ))}
+        </>
+      )}
+    </AppShell>
   );
 }

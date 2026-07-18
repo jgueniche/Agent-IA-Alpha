@@ -2,43 +2,99 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken } from '../../lib/api';
 import { CallSummary, listCalls } from '../../lib/calls';
+import { AppShell } from '../../components/AppShell';
+import {
+  Alerts,
+  Badge,
+  EmptyState,
+  IconPhone,
+  LoadingCard,
+  PageHeader,
+} from '../../components/ui';
+import {
+  DIRECTION,
+  OUTCOME,
+  SITE,
+  URGENCY,
+  formatDateTime,
+  formatDuration,
+  labelOf,
+  textOf,
+} from '../../lib/labels';
 
-/** Journal d'appels (back-office). */
+/** Journal des appels pris par l'agent vocal. */
 export default function CallsPage() {
   const router = useRouter();
-  const [calls, setCalls] = useState<CallSummary[]>([]);
+  const [calls, setCalls] = useState<CallSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
     listCalls()
       .then(setCalls)
       .catch((e) => setError(e.message));
-  }, [router]);
+  }, []);
 
   return (
-    <main style={{ maxWidth: 920, margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1>Journal d'appels</h1>
-      {error && <p className="error">{error}</p>}
-      {calls.length === 0 && <p>Aucun appel.</p>}
-      {calls.map((c) => (
-        <div key={c.id} className="card" style={{ maxWidth: '100%', marginBottom: '0.5rem' }}>
-          <a href={`/calls/${c.id}`} style={{ color: 'var(--accent)' }}>
-            {new Date(c.startedAt).toLocaleString('fr-FR')} — {c.site} · {c.direction}
-          </a>
-          <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
-            {' '}
-            · {c.outcome}
-            {c.urgency !== 'none' ? ` · urgence ${c.urgency}` : ''}
-            {c.durationSeconds != null ? ` · ${c.durationSeconds}s` : ''}
-          </span>
+    <AppShell>
+      <PageHeader
+        title="Journal d'appels"
+        sub="Tous les appels traités par l'agent vocal, du plus récent au plus ancien."
+      />
+      <Alerts error={error} />
+
+      {!calls && !error && <LoadingCard lines={4} />}
+
+      {calls && calls.length === 0 && (
+        <div className="card">
+          <EmptyState
+            icon={IconPhone}
+            title="Aucun appel pour le moment"
+            hint="Les appels apparaîtront ici dès que l'agent vocal en aura traité."
+          />
         </div>
-      ))}
-    </main>
+      )}
+
+      {calls && calls.length > 0 && (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Site</th>
+                <th>Sens</th>
+                <th>Résultat</th>
+                <th>Urgence</th>
+                <th>Durée</th>
+              </tr>
+            </thead>
+            <tbody>
+              {calls.map((c) => (
+                <tr
+                  key={c.id}
+                  className="clickable"
+                  onClick={() => router.push(`/calls/${c.id}`)}
+                >
+                  <td className="td-strong">{formatDateTime(c.startedAt)}</td>
+                  <td>{textOf(SITE, c.site)}</td>
+                  <td className="td-muted">{textOf(DIRECTION, c.direction)}</td>
+                  <td>
+                    <Badge info={labelOf(OUTCOME, c.outcome)} />
+                  </td>
+                  <td>
+                    {c.urgency && c.urgency !== 'none' ? (
+                      <Badge info={labelOf(URGENCY, c.urgency)} />
+                    ) : (
+                      <span className="td-muted">—</span>
+                    )}
+                  </td>
+                  <td className="td-muted">{formatDuration(c.durationSeconds)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </AppShell>
   );
 }
